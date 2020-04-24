@@ -1,0 +1,72 @@
+<p><img src="https://thepracticaldev.s3.amazonaws.com/i/b14q99oadv8qik76vqe3.png" alt=""></p>
+<p>Webpack is a great tool and it&#39;s really great to know at least basics of it. If we are working with Angular CLI, or Create React App, we already have webpack setup there, but if we are working on a web application that&#39;s not using a Javascript Framework, we should probably user a bundler. Sure, we could go with no-setup-needed Parcel but if we want more control, go with Webpack. My personal web site is all Javascript, only one HTML file and no framework. I&#39;me using webpack as a bundler and lazy loading to improve performance and I&#39;m really happy with it!</p>
+<p>To get started, run npm init -y and create the following structure:</p>
+<pre><code>src / 
+--- notLazyLoaded.js
+--- lazyLoaded.js
+index.html
+main.js
+webpack.config.js</code></pre><p>Run the following command to install webpack:</p>
+<pre><code>npm install webpack webpack-cli html-webpack-plugin webpack-dev-server --save-dev</code></pre><p>We&#39;ve installed webpack, webpack plugin for adding our index.html into the bundle and dev server.</p>
+<p>Let&#39;s add some code to our webpack config</p>
+<pre><code>const path = require(&quot;path&quot;);
+const HtmlWebpackPlugin = require(&quot;html-webpack-plugin&quot;);
+
+module.exports = {
+  entry: &quot;./main.js&quot;,
+  output: {
+    filename: &quot;[name].[hash].bundle.js&quot;,
+    path: path.resolve(__dirname, &quot;dist&quot;)
+  },
+  devtool: &quot;inline-source-map&quot;,
+  devServer: {
+    contentBase: &quot;./dist&quot;,
+    port: 9000
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: &quot;./index.html&quot;
+    })
+  ]
+};
+</code></pre><p>Inside our package.json, add a script to bundle and run.</p>
+<pre><code> &quot;webpack&quot;: &quot;webpack-dev-server --open&quot;</code></pre><p>Pretty basic but it will bundle our application and open our web application on port 9000.</p>
+<p>Inside the HTML file, I&#39;ve added 2 buttons, one will call notLazyLoaded.js and the other one will lazyLoaded.js</p>
+<pre><code>&lt;body&gt;
+    &lt;button id=&quot;alert&quot;&gt;Alert&lt;/button&gt; 
+    &lt;button id=&quot;lazyAlert&quot;&gt;Lazy Alert&lt;/button&gt;
+  &lt;/body&gt;</code></pre><p>lazyLoaded.js and notLazyLoaded.js have basically same code.</p>
+<h1 id="lazyloadedjs">lazyLoaded.js</h1>
+<pre><code>const showLazyAlert = () =&gt; {
+  alert(&quot;Hello from lazyLoaded.js&quot;);
+};
+
+export { showLazyAlert };
+</code></pre><h1 id="notlazyloadedjs">notLazyLoaded.js</h1>
+<pre><code>const showAlert = () =&gt; {
+  alert(&quot;Hello from notLazyLoaded.js&quot;);
+};
+
+export { showAlert };
+</code></pre><p>In our main.js, we will add code to show an alert depending of the button clicked.</p>
+<pre><code>import { showAlert } from &quot;./src/notLazyLoaded&quot;;
+
+window.onload = () =&gt; {
+  const alertBtn = document.querySelector(&quot;#alert&quot;);
+  const lazyAlertBtn = document.querySelector(&quot;#lazyAlert&quot;);
+
+  alertBtn.addEventListener(&quot;click&quot;, () =&gt; {
+      showAlert();
+  });
+};
+</code></pre><p>Currently, if we open the app, we see in the network tab that only main.js is loaded on initial load, we click the &#39;Alert&#39; button and an alert shows up which is already loaded in the bundle. Now comes the main part, making changes so when user clicks on &#39;Lazy Alert&#39; button, lazyLoaded.js module loads and executes.</p>
+<p>Inside main.js, add following code</p>
+<pre><code>lazyAlertBtn.addEventListener(&quot;click&quot;, () =&gt; {
+    import(/* webpackChunkName: &quot;lazyLoaded&quot; */ &#39;./src/lazyLoaded&#39;).then(module =&gt; {
+        module.showLazyAlert();
+    });</code></pre><p>Save and open the app. On initial load, we only have the main.js bundle loaded, when we click the Lazy Alert button, lazyLoaded.js bundle loads and executes code. That&#39;s it. It will load only when it needs to load and will improve initial load time and overall performance of the app.</p>
+<p>Source code is hosted on Github.</p>
+<pre><code>git clone https://github.com/BrsJsk/webpack-lazy-loading
+cd webpack-lazy-loading
+npm i
+npm run webpack</code></pre>
